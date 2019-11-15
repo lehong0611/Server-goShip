@@ -1,34 +1,29 @@
 const router = require('express').Router();
-const { body, query } = require('express-validator');
+const { body } = require('express-validator');
 const User = require('../models/User');
+const authen = require('../middlewares/authen');
 
 const accountController = require('../controllers/account.controller');
 
-//Register
-router.post(
-    '/register',
-    [
-        body('Email').isEmail().withMessage('Vui lòng nhập email hợp lệ').trim().normalizeEmail().custom(async email => {
-            const isEmailExists = await User.countDocuments({ Email: email })
-            if (isEmailExists) throw new Error('Email đã tồn tại');
-        }),
-        body('Password').isLength({ min: 8 }).withMessage('Mật khẩu ít nhất có 8 ký tự'),
-    ],
-    accountController.register);
-
 //Login
-router.get(
+router.post(
     '/login',
     [
-        body('Email').isEmail().withMessage('Vui lòng nhập email hợp lệ').trim().normalizeEmail()
-    ], 
+        body('Email').isEmail().withMessage('Vui lòng nhập email hợp lệ').trim()
+    ],
     accountController.login);
 
-// Get All Staff 
-router.get('/usersByRole', accountController.getAllUserByRole);
+// Get All Employee (admin, normal emp)
+router.get('/employees', authen.isAuthorized, accountController.getAllEmp);
 
-// Get All customer 
-router.get('/customers', accountController.getAllCustomer);
+// Get All shipper
+router.get('/allShipper', authen.isAuthorized, accountController.getAllShipper);
+
+// Get All User
+router.get('/users', authen.isAuthorized, accountController.getAllUser);
+
+// Get All Staff
+router.get('/getAllStaff', authen.isAuthorized, accountController.getAllStaff);
 
 //create Shipper And Staff
 router.post(
@@ -40,18 +35,20 @@ router.post(
         }),
         body('Password').isLength({ min: 8 }).withMessage('Mật khẩu ít nhất có 8 ký tự'),
     ],
+    authen.isAuthorized,
     accountController.createUser);
 
-// update information for customer
-router.put('/updateCustomer', accountController.updateCustomer);
-
 // update information for shipper and staff
-router.put('/updateUser', accountController.updateUser);
+router.put('/updateUser/:UserId', authen.isAuthorized, accountController.updateUser);
 
 //get detail user
-router.get('/detailEmployee', accountController.getDetailUser);
+router.get('/detailEmployee', authen.isAuthorized, accountController.getDetailUser);
 
-//get detail Customer
-router.get('/detailcustomer', accountController.getDetailCustomer);
+// delete staff
+router.delete('/deleteEmp/:UserId', authen.isAuthorized, accountController.deleteUser);
+
+router.post('/changePassword', authen.isAuthorized, accountController.changePassword);
+
+// router.post('/upload', authen.isAuthorized, upload.single('file'), accountController.uploadImage);
 
 module.exports = router;

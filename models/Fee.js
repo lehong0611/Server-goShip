@@ -4,7 +4,7 @@ const autoIncrement = require('mongoose-auto-increment');
 autoIncrement.initialize(mongoose.connection);
 
 const feeSchema = new mongoose.Schema({
-    Id: {
+    FeeId: {
         type: Number,
         required: true,
         unique: true
@@ -13,8 +13,12 @@ const feeSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    Kind: {
+        type: Number,
+        required: true
+    },
     Distance: {
-        type: String,
+        type: Number,
         required: true
     },
     Service: {
@@ -29,11 +33,14 @@ const feeSchema = new mongoose.Schema({
     Type: {
         type: Number,
         required: true
+    }, 
+    EstimateTime: {
+        type: String,
     }
 });
 
-agencySchema.plugin(autoIncrement.plugin, {
-	model: 'Fee', field: 'Id'
+feeSchema.plugin(autoIncrement.plugin, {
+	model: 'Fee', field: 'FeeId'
 });
 
 module.exports = mongoose.model('Fee', feeSchema);

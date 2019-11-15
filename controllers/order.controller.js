@@ -1,83 +1,185 @@
 const Order = require('../models/Order');
-const uuidv1  = require('uuid/v1');
+const Customer = require('../models/Customer');
+const User = require('../models/User');
 
-// get order by Mới tạo, Đang giao, Giao thành công, Chờ giao lại, Thất bại
+
+// get All Orders
+
 module.exports.getAllOrderByStatus = async (req, res) => {
 
     try {
 
-        const { OrderStatus } = req.query;
+        let page = parseInt(req.query.page);
+        let pageSize = parseInt(req.query.pageSize);
 
-        const orders = await Order.find({ OrderStatus });
+        const OrderStatus = req.query.OrderStatus;
 
-        return res.send({ status: 1, results: orders });
+        const CreatedUserId = req.decoded.CusId;
 
-    } catch(error) {
+        const counts = await Order.countDocuments({ 'OrderStatus.name': OrderStatus, CreatedUserId: CreatedUserId });
 
-        return res.send({ status: 0, message: error.message });
+        const orders = await Order.find({ 'OrderStatus.name': OrderStatus, CreatedUserId })
+            .sort({ OrderId: -1 })
+            .skip(page > 0 ? ((page - 1) * pageSize) : 0)
+            .limit(pageSize);
 
-    }
-};
+        let data = {
+            counts: counts,
+            orders: orders
+        }
+        return res.send({ status: 1, results: data });
 
-//Find all order by express, normal, saving
-module.exports.getAllOrderByService = async (req, res) => {
-    try {
-
-        const { Service } = req.query;
-
-        const orders = await Order.find({ Service });
-
-        return res.send({ status: 1, results: orders });
-
-    } catch(error) {
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
     }
 };
 
-module.exports.getAllOrderByDate = async (req, res) => {
+module.exports.getOrderforAgency = async (req, res) => {
+
     try {
 
-        const { CreatedDate } = req.query;
+        let page = parseInt(req.query.page);
+        let pageSize = parseInt(req.query.pageSize);
 
-        const orders = await Order.find({ CreatedDate });
+        const OrderStatus = req.query.OrderStatus;
 
-        return res.send({ status: 1, results: orders });
+        const AdminId = req.decoded.AgencyId;
 
-    } catch(error) {
+        const AgencyIdCreate = req.decoded.AgencyId;
+
+        const counts = await Order.countDocuments({ $or: [{ AgencyIdCreate, 'OrderStatus.name': OrderStatus }, { 'AcceptAdminId.AdminId': AdminId, 'OrderStatus.name': OrderStatus }] });
+
+        const orders = await Order.find({ $or: [{ AgencyIdCreate, 'OrderStatus.name': OrderStatus }, { 'AcceptAdminId.AdminId': AdminId, 'OrderStatus.name': OrderStatus }] })
+            .sort({ OrderId: -1 })
+            .skip(page > 0 ? ((page - 1) * pageSize) : 0)
+            .limit(pageSize);
+
+        let data = {
+            counts: counts,
+            orders: orders
+        }
+
+        return res.send({ status: 1, results: data });
+
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
     }
 };
 
-module.exports.getAllOrderByAgency = async (req, res) => {
+module.exports.getSuccessOrFailGet = async (req, res) => {
     try {
 
-        const { CreatedUserId } = req.query;
+        let page = parseInt(req.query.page);
+        let pageSize = parseInt(req.query.pageSize);
 
-        const orders = await Order.find({ CreatedUserId });
+        const ShipperGetOrderId = req.decoded.UserId;
 
-        return res.send({ status: 1, results: orders });
+        const counts = await Order.countDocuments({
+            ShipperGetOrderId, 'Taken.isSuccess': { $in: [true, false] }
+        });
+        const orders = await Order.find({
+            ShipperGetOrderId, 'Taken.isSuccess': { $in: [true, false] }
+        }).sort({ OrderId: -1 })
+            .skip(page > 0 ? ((page - 1) * pageSize) : 0)
+            .limit(pageSize);
 
-    } catch(error) {
+        let data = {
+            counts: counts,
+            orders: orders
+        }
+
+        return res.send({ status: 1, results: data });
+
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
     }
 };
 
-module.exports.getAllOrderByShipper = async (req, res) => {
+module.exports.getSuccessOrFailTrans = async (req, res) => {
     try {
 
-        const { ShipperId } = req.query;
+        let page = parseInt(req.query.page);
+        let pageSize = parseInt(req.query.pageSize);
 
-        const orders = await Order.find({ ShipperId });
+        const ShipperTransId = req.decoded.UserId;
 
-        return res.send({ status: 1, results: orders });
+        const counts = await Order.countDocuments({ ShipperTransId, 'OrderStatus.name': { $in: ['success', 'fail'] } });
+        const orders = await Order.find({
+            ShipperTransId, 'OrderStatus.name': { $in: ['success', 'fail'] }
+        }).sort({ OrderId: -1 })
+            .skip(page > 0 ? ((page - 1) * pageSize) : 0)
+            .limit(pageSize);
 
-    } catch(error) {
+        let data = {
+            counts: counts,
+            orders: orders
+        }
+
+        return res.send({ status: 1, results: data });
+
+    } catch (error) {
+
+        return res.send({ status: 0, message: error.message });
+
+    }
+};
+
+module.exports.getOrderByShipperGet = async (req, res) => {
+    try {
+
+        let page = parseInt(req.query.page);
+        let pageSize = parseInt(req.query.pageSize);
+
+        const ShipperGetOrderId = req.decoded.UserId;
+
+        const counts = await Order.countDocuments({ 'OrderStatus.name': { $in: ['unavailable', 'taken'] }, ShipperGetOrderId });
+        const orders = await Order.find({ 'OrderStatus.name': { $in: ['unavailable', 'taken'] }, ShipperGetOrderId })
+            .sort({ OrderId: -1 })
+            .skip(page > 0 ? ((page - 1) * pageSize) : 0)
+            .limit(pageSize);
+
+        let data = {
+            counts: counts,
+            orders: orders
+        }
+        return res.send({ status: 1, results: data });
+
+    } catch (error) {
+
+        return res.send({ status: 0, message: error.message });
+
+    }
+};
+
+module.exports.getOrderByShipperTrans = async (req, res) => {
+    try {
+
+        let page = parseInt(req.query.page);
+        let pageSize = parseInt(req.query.pageSize);
+
+        const OrderStatus = req.query.OrderStatus;
+
+        const ShipperTransId = req.decoded.UserId;
+
+        const counts = await Order.countDocuments({ 'OrderStatus.name': OrderStatus, ShipperTransId });
+        const orders = await Order.find({ 'OrderStatus.name': OrderStatus, ShipperTransId })
+            .sort({ OrderId: -1 })
+            .skip(page > 0 ? ((page - 1) * pageSize) : 0)
+            .limit(pageSize);
+
+        let data = {
+            counts: counts,
+            orders: orders
+        }
+        return res.send({ status: 1, results: data });
+
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
@@ -93,7 +195,7 @@ module.exports.getAllOrderByAllCondition = async (req, res) => {
 
         return res.send({ status: 1, results: orders });
 
-    } catch(error) {
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
@@ -101,40 +203,79 @@ module.exports.getAllOrderByAllCondition = async (req, res) => {
 };
 
 // Tạo đơn hàng bởi admin chi nhánh hoặc khách hàng
-module.exports.creatOrder = async (req, res) => {
+module.exports.createOrder = async (req, res) => {
     try {
-        const { SenderName, SenderPhoneNumber, SenderAddress, ReceiverName, ReceiverPhoneNumber, 
-            ReceiverAddress, PackageWeight, KindOfOrder, NoteRequired, CreatedTime,
-            CreatedUserId, Service, Cost, ShipperGetOrderId, ShipperTransId, OrderStatus,
-            TransportCharge, EstimatedTime, CodeOrder, HistoryStatus } = req.body;
 
-        const order = await Order.create({ OrderId:uuidv1(), SenderName, SenderPhoneNumber, 
-            SenderAddress, ReceiverName, ReceiverPhoneNumber, ReceiverAddress, PackageWeight, 
-            KindOfOrder, NoteRequired, CreatedTime, CreatedUserId, Service, Cost, 
-            ShipperGetOrderId, ShipperTransId, OrderStatus, TransportCharge, EstimatedTime,
-            CodeOrder, HistoryStatus });
+        let CreatedUserId = '';
+        let AgencyIdCreate = '';
+
+        const { SenderName, SenderPhone, SenderAddress, ReceiverName, ReceiverPhone,
+            ReceiverAddress, Weight, Kind, Note, Service, AcceptAdminId, AcceptTime,
+            Cost, reassignAgencyId, ShipperGetOrderId, ShipperTransId,
+            TransportCharge, EstimatedTime, TextReject } = req.body;
+
+        if (req.decoded.UserId && req.decoded.AgencyId) {
+            CreatedUserId = req.decoded.UserId;
+            AgencyIdCreate = req.decoded.AgencyId;
+        } else {
+            CreatedUserId = req.decoded.CusId;
+            AgencyIdCreate = '';
+        }
+
+        const OrderStatus = {
+            name: req.body.OrderStatusName,
+            time: req.body.OrderStatusTime
+        }
+
+        const order = await Order.create({
+            SenderName, SenderPhone, SenderAddress, ReceiverName, ReceiverPhone, ReceiverAddress,
+            Weight, Kind, Note, CreatedTime: OrderStatus.time, CreatedUserId, Service,
+            Cost, OrderStatus, reassignAgencyId, ShipperTransId, ShipperGetOrderId, TransportCharge,
+            EstimatedTime, TextReject, AgencyIdCreate: AgencyIdCreate, 'AcceptAdminId.AdminId': AcceptAdminId,
+            'AcceptAdminId.acceptTime': AcceptTime
+        });
 
         return res.send({ status: 1, results: order });
 
-    } catch(error) {
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
     }
 };
 
+// search order
 module.exports.getOrderInfoById = async (req, res) => {
     try {
-        const { OrderId } = req.param;
+        let listOrder = [];
+
+        const id = req.params._id;
+
+        const order = await Order.findById({ '_id': id });
+
+        listOrder.push(order);
+
+        return res.send({ status: 1, results: listOrder });
+
+    } catch (error) {
+
+        return res.send({ status: 0, message: error.message });
+
+    }
+};
+
+module.exports.detailOrder = async (req, res) => {
+    try {
+        const OrderId = req.body.OrderId;
 
         const order = await Order.findOne({ OrderId });
 
         return res.send({ status: 1, results: order });
 
-    } catch(error) {
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
-        
+
     }
 };
 
@@ -145,42 +286,106 @@ module.exports.getOrderInfoById = async (req, res) => {
 module.exports.updateOrderById = async (req, res) => {
 
     try {
-        const { SenderName, SenderPhoneNumber, SenderAddress, ReceiverName, ReceiverPhoneNumber, 
-            ReceiverAddress, PackageWeight, KindOfOrder, NoteRequired, Service, Cost, OrderStatus, 
-            ShipperGetOrderId, ShipperTransId, TimeHistory, UserHistoryId } = req.body;
+        const { SenderName, SenderPhoneNumber, SenderAddress, ReceiverName, ReceiverPhoneNumber,
+            ReceiverAddress, Weight, Kind, Note, Service, Cost, ShipperGetOrderId, ShipperTransId,
+            reassignAgencyId, OrderStatusName, OrderStatusTime, EstimatedTime, TransportCharge,
+            TextReject, isTakeSuccess, TakeTime, AcceptAdminId, AcceptTime
+        } = req.body;
 
-        const { OrderId } = req.query;
+        const OrderId = req.params.OrderId;
 
-        const order = await Order.findOneAndUpdate({ OrderId }, { SenderName, SenderPhoneNumber, 
-            SenderAddress, ReceiverName, ReceiverPhoneNumber, ReceiverAddress, PackageWeight, NoteRequired, 
-            Service, Cost, OrderStatus, KindOfOrder, ShipperGetOrderId, ShipperTransId, 
-            $set: { 'HistoryStatus.UserId': UserHistoryId, 'HistoryStatus.Status': req.body.OrderStatus, 'HistoryStatus.Time': TimeHistory } });
+        const order = await Order.findOneAndUpdate({ OrderId }, {
+            SenderName, SenderPhoneNumber, SenderAddress, ReceiverName, ReceiverPhoneNumber,
+            ReceiverAddress, Weight, Note, Kind, Service, Cost, ShipperGetOrderId, ShipperTransId,
+            reassignAgencyId, 'OrderStatus.name': OrderStatusName, 'OrderStatus.time': OrderStatusTime,
+            'Taken.isSuccess': isTakeSuccess, 'Taken.date': TakeTime, TransportCharge, EstimatedTime,
+            TextReject, 'AcceptAdminId.AdminId': AcceptAdminId, 'AcceptAdminId.acceptTime': AcceptTime
+        });
 
         return res.send({ status: 1, results: order });
 
-    } catch(error) {
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
 
     }
 };
 
-// Chỉ được phép xóa đơn hàng bởi amdin chi nhánh với trạng thái đơn hàng là mới tạo
-// Không thể xóa khi đơn hàng có các trạng thái còn lại
-module.exports.deleteOrderByIdAndStatus = async (req, res) => {
+// Chỉ khách hàng được phép xóa đơn hàng
+module.exports.deleteOrderById = async (req, res) => {
     try {
-        const { OrderId } = req.query;
+        const OrderId = req.params.OrderId;
 
-        const order = await Order.findOne({ OrderId });
+        const order = await Order.findOneAndRemove({ OrderId });
 
-        return res.send({ status: 1, results: order });
+        return res.send({ status: 1, message: 'Deleted successfully !' });
 
-    } catch(error) {
+    } catch (error) {
 
         return res.send({ status: 0, message: error.message });
-        
+
     }
 };
+
+module.exports.report = async (req, res) => {
+    try {
+        // let AgencyIdCreate = req.decoded.AgencyId;
+        let fromDate = req.body.fromDate;
+
+        let toDate = req.body.toDate;
+
+        let AgencyIdCreate = AcceptAdminId = req.decoded.AgencyId;
+
+        let totalOrders = await Order.countDocuments({
+            $or:
+                [
+                    { AgencyIdCreate, CreatedTime: { "$gte": fromDate, "$lt": toDate } },
+                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                ]
+        });
+
+        let orders = await Order.find({
+            $or:
+                [
+                    { AgencyIdCreate, CreatedTime: { "$gte": fromDate, "$lt": toDate } },
+                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                ]
+        });
+
+        let totalRevenue = orders.reduce((currentPrice, order) => {
+            return currentPrice + order.TransportCharge;
+        }, 0);
+
+        let orderSuccess = await Order.countDocuments({
+            $or:
+                [
+                    { AgencyIdCreate, 'OrderStatus.name': 'success', CreatedTime: { "$gte": fromDate, "$lt": toDate } },
+                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'OrderStatus.name': 'success', 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                ]
+        });
+
+        let orderFail = await Order.countDocuments({
+            $or:
+                [
+                    { AgencyIdCreate, 'OrderStatus.name': { $in: ['failed', 'miss-taken']}, CreatedTime: { "$gte": fromDate, "$lt": toDate } },
+                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'OrderStatus.name': { $in: ['failed', 'miss-taken']}, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                ]
+        });
+
+        let data = {
+            totalOrders: totalOrders,
+            totalRevenue: totalRevenue,
+            orderSuccess: orderSuccess,
+            orderFail: orderFail,
+        }
+
+        return res.send({ status: 1, results: data });
+
+    } catch (err) {
+        return res.send({ status: 0, message: err.message });
+    }
+}
+
 
 
 

@@ -9,6 +9,7 @@ const orderSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    // Trong trường hợp khách lẻ, thông tin của khách chính là senderName
     SenderName: {
         type: String,
         required: true,
@@ -25,7 +26,7 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    ReceiverPhoner: {
+    ReceiverPhone: {
         type: String,
         required: true,
     },
@@ -38,7 +39,7 @@ const orderSchema = new mongoose.Schema({
         required: true
     },
     Kind: {
-        type: String,
+        type: Number,
         required: true
     },
     Note: {
@@ -48,28 +49,16 @@ const orderSchema = new mongoose.Schema({
     CreatedTime: {
         type: Date,
         required: true,
-        default: Date.now
+        default: new Date()
     },
     // amin cua chi nhanh or khach hang
     CreatedUserId: {
         type: Number,
         required: true
     },
-    // Thông tin cua khách lẻ
-    GuestName: {
-        type: String,
-        required: true
+    AgencyIdCreate: {
+        type: Number
     },
-    GuestPhone: {
-        type: String,
-        required: true,
-        max: 10
-    },
-    GuestAddress: {
-        type: String,
-        required: true
-    },
-    // end phần thông tin
     // nhanh, chuẩn, tiết kiệm
     Service: {
         type: String,
@@ -77,7 +66,8 @@ const orderSchema = new mongoose.Schema({
     },
     // admin đại lý nào xác nhận đơn hàng
     AcceptAdminId: {
-        type: Number
+        AdminId: {type: Number},
+        acceptTime: {type: Date}
     },
     // Đại lý tiếp nhận đơn hàng
     reassignAgencyId: {
@@ -88,29 +78,32 @@ const orderSchema = new mongoose.Schema({
         require: true
     },
     ShipperGetOrderId: {
-        type: String,
+        type: Number,
     },
     ShipperTransId: {
-        type: String
-    },
-    AddressGetOrder: {
-        type: String
+        type: Number
     },
     // Mới tạo, Đang giao, Giao thành công, Chờ giao lại, Thất bại
-    OrderStatusId: {
-        type: Number,
-        required: true,
-
+    OrderStatus: {
+        name: {type: String, required: true},
+        time: { type: Date, required: true, default: new Date()},
     },
     TransportCharge: {
         type: Number
     }, 
     EstimatedTime: {
         type: Date
+    },
+    TextReject: {
+        type: String
+    },
+    Taken: {
+        isSuccess: {type: Boolean},
+        date: { type: Date }
     }
 });
 
-agencySchema.plugin(autoIncrement.plugin, {
+orderSchema.plugin(autoIncrement.plugin, {
 	model: 'Order', field: 'OrderId'
 });
 

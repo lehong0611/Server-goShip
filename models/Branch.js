@@ -15,12 +15,21 @@ const agencySchema = new mongoose.Schema({
     },
     Phone: {
         type: String,
-        max: 10,
-        default: ''
+        max: 11
     },
     Address: {
-        type: String,
-        required: true
+        name: {
+            type: String,
+            required: true
+        },
+        lat: {
+            type: Number,
+            required: true
+        },
+        lng: {
+            type: Number,
+            required: true
+        }
     },
     Active: {
         type: Boolean,

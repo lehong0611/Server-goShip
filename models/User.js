@@ -4,52 +4,49 @@ const autoIncrement = require('mongoose-auto-increment');
 autoIncrement.initialize(mongoose.connection);
 
 const userSchema = new mongoose.Schema({
-    userId: {
+    UserId: {
         type: Number,
         required: true,
         unique: true
     },
-    fullName: {
+    FullName: {
         type: String,
         required: true
     },
-    userName: {
+    UserName: {
         type: String,
         required: true,
     },
-    email: {
+    Email: {
         type: String,
         required: true,
         unique: true
     },
-    password: {
+    Password: {
         type: String,
-        required: true,
-        min: 8
+        required: true
     },
-    phone: {
-        type: String,
-        max: 10,
-        default: ''
-    },
-    image: {
+    Phone: {
         type: String
     },
-    role: {
+    Image: {
+        type: String
+    },
+    Role: {
         type: String,
         required: true,
     },
-    agencyId: {
+    AgencyId: {
         type: Number
     },
-    active: {
+    Active: {
         type: Boolean,
         default: true
     }
 });
 
 userSchema.plugin(autoIncrement.plugin, {
-	model: 'User', field: 'UserID'
+	model: 'User', field: 'UserId'
 });
 
 module.exports = mongoose.model('User', userSchema);
