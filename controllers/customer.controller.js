@@ -110,7 +110,7 @@ module.exports.getAllCustomers = async (req, res) => {
 module.exports.getDetailCustomer = async (req, res) => {
 
     try {
-        const CusId  = req.decoded.CusId;
+        const CusId = req.decoded.CusId;
         const customer = await Customer.findOne({ CusId }).select('Email UserName _id Phone FullName Address Active CusId Image');
 
         return res.send({ status: 1, results: customer });
@@ -125,11 +125,11 @@ module.exports.updateActive = async (req, res) => {
 
         const CusId = req.params.CusId;
 
-        const { Phone, Address, Active, Image } = req.body;
+        const { Active } = req.body;
 
         // Active to inform customer will be stop active or not
 
-        const customer = await Customer.findOneAndUpdate({ CusId }, { Phone, Address, Active, Image });
+        const customer = await Customer.findOneAndUpdate({ CusId }, { Active });
 
         let cusData = {
             CusId: customer.CusId,
@@ -157,11 +157,11 @@ module.exports.updateInfo = async (req, res) => {
 
         const CusId = req.decoded.CusId;
 
-        const { Phone, Address, Image } = req.body;
+        const { Phone, Address, Image, Lat, Lng } = req.body;
 
         // Active to inform customer will be stop active or not
 
-        const customer = await Customer.findOneAndUpdate({ CusId }, { Phone, Address, Image });
+        const customer = await Customer.findOneAndUpdate({ CusId }, { Phone, 'Address.name': Address, Image, 'Address.lat': Lat, 'Address.lng': Lng });
 
         let cusData = {
             Phone: customer.Phone,
@@ -175,6 +175,34 @@ module.exports.updateInfo = async (req, res) => {
 
         return res.send({ status: 0, message: error.message });
 
+    }
+};
+
+module.exports.changePassword = async (req, res) => {
+
+    try {
+        const CusId = req.decoded.CusId;
+
+        const currentPassword = req.body.currentPass;
+
+        const newPass = req.body.newPass;
+
+        const customer = await Customer.findOne({ CusId });
+
+        const validPass = await bcrypt.compare(currentPassword, customer.Password);
+
+        if (!validPass) {
+            return res.send({ status: 0, message: "Mật khẩu không đúng" });
+        }
+
+        const hassPass = await bcrypt.hash(newPass, saltRounds);
+
+        const updateUser = await Customer.findOneAndUpdate({CusId}, {Password:hassPass})
+
+        res.send({status: 1, message: 'Thay đổi mật khẩu thành công!'});
+
+    } catch(error) {
+        return res.send({ status: 0, message: error.message });
     }
 };
 

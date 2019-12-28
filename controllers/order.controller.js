@@ -109,9 +109,9 @@ module.exports.getSuccessOrFailTrans = async (req, res) => {
 
         const ShipperTransId = req.decoded.UserId;
 
-        const counts = await Order.countDocuments({ ShipperTransId, 'OrderStatus.name': { $in: ['success', 'fail'] } });
+        const counts = await Order.countDocuments({ ShipperTransId, 'OrderStatus.name': { $in: ['success', 'failed'] } });
         const orders = await Order.find({
-            ShipperTransId, 'OrderStatus.name': { $in: ['success', 'fail'] }
+            ShipperTransId, 'OrderStatus.name': { $in: ['success', 'failed'] }
         }).sort({ OrderId: -1 })
             .skip(page > 0 ? ((page - 1) * pageSize) : 0)
             .limit(pageSize);
@@ -210,7 +210,7 @@ module.exports.createOrder = async (req, res) => {
         let AgencyIdCreate = '';
 
         const { SenderName, SenderPhone, SenderAddress, ReceiverName, ReceiverPhone,
-            ReceiverAddress, Weight, Kind, Note, Service, AcceptAdminId, AcceptTime,
+            ReceiverAddress, Weight, Kind, Note, Service, AdminId, AcceptTime,
             Cost, reassignAgencyId, ShipperGetOrderId, ShipperTransId,
             TransportCharge, EstimatedTime, TextReject } = req.body;
 
@@ -231,7 +231,7 @@ module.exports.createOrder = async (req, res) => {
             SenderName, SenderPhone, SenderAddress, ReceiverName, ReceiverPhone, ReceiverAddress,
             Weight, Kind, Note, CreatedTime: OrderStatus.time, CreatedUserId, Service,
             Cost, OrderStatus, reassignAgencyId, ShipperTransId, ShipperGetOrderId, TransportCharge,
-            EstimatedTime, TextReject, AgencyIdCreate: AgencyIdCreate, 'AcceptAdminId.AdminId': AcceptAdminId,
+            EstimatedTime, TextReject, AgencyIdCreate: AgencyIdCreate, 'AcceptAdminId.AdminId': AdminId,
             'AcceptAdminId.acceptTime': AcceptTime
         });
 
@@ -289,7 +289,7 @@ module.exports.updateOrderById = async (req, res) => {
         const { SenderName, SenderPhoneNumber, SenderAddress, ReceiverName, ReceiverPhoneNumber,
             ReceiverAddress, Weight, Kind, Note, Service, Cost, ShipperGetOrderId, ShipperTransId,
             reassignAgencyId, OrderStatusName, OrderStatusTime, EstimatedTime, TransportCharge,
-            TextReject, isTakeSuccess, TakeTime, AcceptAdminId, AcceptTime
+            TextReject, isTakeSuccess, TakeTime, AdminId, AcceptTime
         } = req.body;
 
         const OrderId = req.params.OrderId;
@@ -299,7 +299,7 @@ module.exports.updateOrderById = async (req, res) => {
             ReceiverAddress, Weight, Note, Kind, Service, Cost, ShipperGetOrderId, ShipperTransId,
             reassignAgencyId, 'OrderStatus.name': OrderStatusName, 'OrderStatus.time': OrderStatusTime,
             'Taken.isSuccess': isTakeSuccess, 'Taken.date': TakeTime, TransportCharge, EstimatedTime,
-            TextReject, 'AcceptAdminId.AdminId': AcceptAdminId, 'AcceptAdminId.acceptTime': AcceptTime
+            TextReject, 'AcceptAdminId.AdminId': AdminId, 'AcceptAdminId.acceptTime': AcceptTime
         });
 
         return res.send({ status: 1, results: order });
@@ -334,13 +334,13 @@ module.exports.report = async (req, res) => {
 
         let toDate = req.body.toDate;
 
-        let AgencyIdCreate = AcceptAdminId = req.decoded.AgencyId;
+        let AgencyIdCreate = AdminId = req.decoded.AgencyId;
 
         let totalOrders = await Order.countDocuments({
             $or:
                 [
                     { AgencyIdCreate, CreatedTime: { "$gte": fromDate, "$lt": toDate } },
-                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                    { 'AcceptAdminId.AdminId': AdminId, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
                 ]
         });
 
@@ -348,7 +348,7 @@ module.exports.report = async (req, res) => {
             $or:
                 [
                     { AgencyIdCreate, CreatedTime: { "$gte": fromDate, "$lt": toDate } },
-                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                    { 'AcceptAdminId.AdminId': AdminId, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
                 ]
         });
 
@@ -360,7 +360,7 @@ module.exports.report = async (req, res) => {
             $or:
                 [
                     { AgencyIdCreate, 'OrderStatus.name': 'success', CreatedTime: { "$gte": fromDate, "$lt": toDate } },
-                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'OrderStatus.name': 'success', 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                    { 'AcceptAdminId.AdminId': AdminId, 'OrderStatus.name': 'success', 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
                 ]
         });
 
@@ -368,7 +368,7 @@ module.exports.report = async (req, res) => {
             $or:
                 [
                     { AgencyIdCreate, 'OrderStatus.name': { $in: ['failed', 'miss-taken']}, CreatedTime: { "$gte": fromDate, "$lt": toDate } },
-                    { 'AcceptAdminId.AdminId': AcceptAdminId, 'OrderStatus.name': { $in: ['failed', 'miss-taken']}, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
+                    { 'AcceptAdminId.AdminId': AdminId, 'OrderStatus.name': { $in: ['failed', 'miss-taken']}, 'AcceptAdminId.acceptTime': { "$gte": fromDate, "$lt": toDate } }
                 ]
         });
 

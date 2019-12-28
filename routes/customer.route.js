@@ -32,4 +32,6 @@ router.put('/updateCus/:CusId', authen.isAuthorized, cusController.updateActive)
 
 router.put('/updateInfo', authen.isAuthorized, cusController.updateInfo);
 
+router.put('/changePassword', authen.isAuthorized, cusController.changePassword);
+
 module.exports = router;
